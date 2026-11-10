@@ -162,13 +162,13 @@ footer{text-align:center;font-size:11px;color:var(--color-sub);margin-top:16px}
     <div class="note" style="margin-top:12px">
       ・摩擦損失はダルシー・ワイズバッハ式＋コールブルック式で計算しています。<br>
       ・角ダクトは相当直径 De＝1.30×(a·b)<sup>0.625</sup>／(a＋b)<sup>0.25</sup> で円形に換算しています（速度法だけは断面積で選定）。<br>
-      ・制気口の開口率と風速は一般的な初期値です。メーカーのカタログ値に合わせて変更してください（変更した値はこの端末に保存されます）。開口率は1.0を超えて入力できません。<br>
+      ・制気口の開口率と風速は一般的な初期値です。メーカーのカタログ値に合わせて変更してください（変更した値は保存されず、再読み込みすると初期値に戻ります）。開口率は1.0を超えて入力できません。<br>
       ・計算結果は参考値です。最終的なサイズは技術者が確認してください。
     </div>
   </div>
 </section>
 
-<footer>ダクト・制気口選定｜栄都工業　Rev04-20261110　©2026 Eito Kogyo</footer>
+<footer>ダクト・制気口選定｜栄都工業　Rev05-20261110　©2026 Eito Kogyo</footer>
 </div>
 
 <script>
@@ -176,8 +176,9 @@ footer{text-align:center;font-size:11px;color:var(--color-sub);margin-top:16px}
 const $=id=>document.getElementById(id);
 const LS_KEY='eito-duct-selector-v1';
 let store={};
-try{store=JSON.parse(localStorage.getItem(LS_KEY)||'{}')||{};}catch(e){store={};}
-function save(){try{localStorage.setItem(LS_KEY,JSON.stringify(store));}catch(e){}}
+// 入力・設定はどこにも保存しない（再読み込みで初期値に戻る／他の人の操作も記録しない）
+function save(){}
+try{localStorage.removeItem(LS_KEY);}catch(e){} // Rev04までに端末へ残った値を消す
 const num=(id)=>{const v=parseFloat($(id).value);return isFinite(v)?v:NaN;};
 const f1=(x,d=1)=>isFinite(x)?x.toFixed(d):'−';
 const fmt0=x=>isFinite(x)?Math.round(x).toLocaleString():'−';
