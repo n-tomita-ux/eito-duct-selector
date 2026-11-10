@@ -145,7 +145,7 @@ footer{text-align:center;font-size:11px;color:var(--color-sub);margin-top:16px}
 <!-- ================= 設定 ================= -->
 <section id="tab-rec" class="hidden">
   <div id="recList"></div>
-  <div class="note" style="margin:4px 4px 12px">記録は最大5件。6件目を記録すると一番古いものから消えます。記録はこのブラウザの中だけに残り、ほかのブラウザやスマホからは見えません。</div>
+  <div class="note" style="margin:4px 4px 12px">記録は最大5件。6件目を記録すると一番古いものから消えます。記録はアプリを開いている間だけ残り、再読み込みやタブを閉じると消えます。</div>
 </section>
 
 <section id="tab-setting" class="hidden">
@@ -181,7 +181,7 @@ footer{text-align:center;font-size:11px;color:var(--color-sub);margin-top:16px}
   </div>
 </section>
 
-<footer>ダクト・制気口選定｜栄都工業　Rev06-20261110　©2026 Eito Kogyo</footer>
+<footer>ダクト・制気口選定｜栄都工業　Rev07-20261110　©2026 Eito Kogyo</footer>
 </div>
 
 <script>
@@ -439,8 +439,11 @@ buildDevTabs();buildDevParams();setMethod(method);calcOutlet();
 const REC_KEY='eito-duct-records-v1',REC_MAX=5;
 const DUCT_IDS=['dQ','dR','dV1','dL','dK','dPt','dZeta','dV','cShape','cW','cH','cD','dHfix'];
 const METHOD_NAME={cp:'定圧法',sr:'静圧再取得法',tp:'全圧法',vel:'速度法',chk:'サイズ確認'};
-function loadRec(){try{const a=JSON.parse(localStorage.getItem(REC_KEY)||'[]');return Array.isArray(a)?a:[];}catch(e){return [];}}
-function saveRec(a){try{localStorage.setItem(REC_KEY,JSON.stringify(a));return true;}catch(e){return false;}}
+// 記録はアプリを開いている間だけ（メモリ上）。再読み込み・タブを閉じると消える
+let REC=[];
+try{localStorage.removeItem(REC_KEY);}catch(e){} // Rev06でブラウザに残った記録を消す
+function loadRec(){return REC.slice();}
+function saveRec(a){REC=a.slice();return true;}
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function updRecTab(){$('recTabBtn').textContent='記録（'+loadRec().length+'/'+REC_MAX+'）';}
 function summaryOf(el){
