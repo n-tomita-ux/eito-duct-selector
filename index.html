@@ -60,6 +60,11 @@ tr.ng td{color:#BBBBBB}
 .chk{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--color-main);margin-top:8px}
 .chk input{width:18px;height:18px}
 .hidden{display:none!important}
+.btn-primary{background:var(--color-accent);color:#fff;border:none;border-radius:8px;padding:10px 20px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.rec-item .head{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--color-sub)}
+.rec-item .memo{font-weight:600;font-size:15px;margin:2px 0}
+.rec-item .sum{font-family:var(--font-en);font-size:14px}
+.rec-item .btns{display:flex;gap:8px;margin-top:10px}
 .btn-secondary{background:var(--color-bg);color:var(--color-main);border:none;border-radius:8px;padding:8px 16px;font:inherit;font-size:13px;cursor:pointer}
 footer{text-align:center;font-size:11px;color:var(--color-sub);margin-top:16px}
 .note{font-size:12px;color:var(--color-sub);line-height:1.7}
@@ -77,6 +82,7 @@ footer{text-align:center;font-size:11px;color:var(--color-sub);margin-top:16px}
 <div class="seg" id="mainTabs">
   <button data-t="duct" class="on">ダクト</button>
   <button data-t="outlet">制気口</button>
+  <button data-t="rec" id="recTabBtn">記録</button>
   <button data-t="setting">設定</button>
 </div>
 
@@ -112,6 +118,7 @@ footer{text-align:center;font-size:11px;color:var(--color-sub);margin-top:16px}
   </div>
 
   <div class="card" id="ductResult"></div>
+  <div class="card recbar"><div class="row"><label class="f">メモ（任意）<input type="text" id="dMemo" placeholder="例：2F 事務室 SA系統"></label><div style="flex:0 0 auto"><button class="btn-primary" type="button" id="dRec">記録する</button></div></div><div class="hint" id="dRecMsg"></div></div>
 </section>
 
 <!-- ================= 制気口 ================= -->
@@ -132,9 +139,15 @@ footer{text-align:center;font-size:11px;color:var(--color-sub);margin-top:16px}
     <div class="hint" id="devHint"></div>
   </div>
   <div class="card" id="outletResult"></div>
+  <div class="card recbar"><div class="row"><label class="f">メモ（任意）<input type="text" id="oMemo" placeholder="例：2F 事務室 SA系統"></label><div style="flex:0 0 auto"><button class="btn-primary" type="button" id="oRec">記録する</button></div></div><div class="hint" id="oRecMsg"></div></div>
 </section>
 
 <!-- ================= 設定 ================= -->
+<section id="tab-rec" class="hidden">
+  <div id="recList"></div>
+  <div class="note" style="margin:4px 4px 12px">記録は最大5件。6件目を記録すると一番古いものから消えます。記録はこのブラウザの中だけに残り、ほかのブラウザやスマホからは見えません。</div>
+</section>
+
 <section id="tab-setting" class="hidden">
   <div class="card">
     <h2>ダクトの計算条件</h2>
@@ -168,7 +181,7 @@ footer{text-align:center;font-size:11px;color:var(--color-sub);margin-top:16px}
   </div>
 </section>
 
-<footer>ダクト・制気口選定｜栄都工業　Rev05-20261110　©2026 Eito Kogyo</footer>
+<footer>ダクト・制気口選定｜栄都工業　Rev06-20261110　©2026 Eito Kogyo</footer>
 </div>
 
 <script>
@@ -407,9 +420,9 @@ function calcOutlet(){
 /* ---------- イベント ---------- */
 document.querySelectorAll('#mainTabs button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('#mainTabs button').forEach(x=>x.classList.toggle('on',x===b));
-  ['duct','outlet','setting'].forEach(t=>$('tab-'+t).classList.toggle('hidden',t!==b.dataset.t));
+  ['duct','outlet','rec','setting'].forEach(t=>$('tab-'+t).classList.toggle('hidden',t!==b.dataset.t));
   store.tab=b.dataset.t;save();
-  if(b.dataset.t==='duct')calcDuct();if(b.dataset.t==='outlet')calcOutlet();
+  if(b.dataset.t==='duct')calcDuct();if(b.dataset.t==='outlet')calcOutlet();if(b.dataset.t==='rec')renderRec();
 });
 document.querySelectorAll('#methodTabs button').forEach(b=>b.onclick=()=>setMethod(b.dataset.m));
 ['dQ','dR','dV1','dL','dK','dPt','dZeta','dV','cW','cH','cD','dHfix'].forEach(id=>$(id).addEventListener('input',calcDuct));
@@ -422,6 +435,51 @@ $('resetAll').onclick=()=>{persistIds.forEach(id=>$(id).value=defaults[id]);stor
 document.querySelectorAll('input[type=number]').forEach(i=>i.addEventListener('focus',()=>{try{i.select();}catch(e){}}));
 
 buildDevTabs();buildDevParams();setMethod(method);calcOutlet();
+/* ---------- 記録（このブラウザのみ・最大5件） ---------- */
+const REC_KEY='eito-duct-records-v1',REC_MAX=5;
+const DUCT_IDS=['dQ','dR','dV1','dL','dK','dPt','dZeta','dV','cShape','cW','cH','cD','dHfix'];
+const METHOD_NAME={cp:'定圧法',sr:'静圧再取得法',tp:'全圧法',vel:'速度法',chk:'サイズ確認'};
+function loadRec(){try{const a=JSON.parse(localStorage.getItem(REC_KEY)||'[]');return Array.isArray(a)?a:[];}catch(e){return [];}}
+function saveRec(a){try{localStorage.setItem(REC_KEY,JSON.stringify(a));return true;}catch(e){return false;}}
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function updRecTab(){$('recTabBtn').textContent='記録（'+loadRec().length+'/'+REC_MAX+'）';}
+function summaryOf(el){
+  const best=[...el.querySelectorAll('tr.best td:first-child')].map(td=>td.textContent.trim());
+  const hl=[...el.querySelectorAll('.kv.hl')].map(k=>k.querySelector('.k').textContent+' '+k.querySelector('.v').textContent);
+  return (best.length?best:hl).join(' ／ ');
+}
+function addRec(kind){
+  const now=new Date(),t=now.getFullYear()+'/'+(now.getMonth()+1)+'/'+now.getDate()+' '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  let r;
+  if(kind==='d'){const inputs={};DUCT_IDS.forEach(id=>inputs[id]=$(id).value);
+    r={t,kind,method,inputs,memo:$('dMemo').value.trim(),title:METHOD_NAME[method]+'　'+$('dQ').value+' m³/h',sum:summaryOf($('ductResult'))};}
+  else{const d=DEVICES.find(x=>x.id===dev);
+    r={t,kind,dev,inputs:{oQ:$('oQ').value,smArea:$('smArea').value},dp:Object.assign({},(store.dp&&store.dp[dev])||{}),memo:$('oMemo').value.trim(),title:d.name+'　'+$('oQ').value+' m³/h',sum:summaryOf($('outletResult'))};}
+  if(!r.sum){$(kind+'RecMsg').textContent='計算結果がないので記録できません。';return;}
+  const a=loadRec();a.unshift(r);const drop=a.length>REC_MAX;if(drop)a.length=REC_MAX;
+  if(saveRec(a)){$(kind+'RecMsg').textContent='記録しました（'+a.length+'/'+REC_MAX+'）'+(drop?'。一番古い記録を消しました':'');$(kind+'Memo').value='';}
+  else $(kind+'RecMsg').textContent='このブラウザでは記録できませんでした（プライベートモードなど）。';
+  updRecTab();
+}
+function renderRec(){
+  const a=loadRec(),el=$('recList');updRecTab();
+  if(!a.length){el.innerHTML='<div class="card note">まだ記録はありません。ダクト・制気口の結果の下にある「記録する」で残せます。</div>';return;}
+  el.innerHTML=a.map((r,i)=>`<div class="card rec-item"><div class="head"><span>${r.kind==='d'?'ダクト':'制気口'}｜${esc(r.title)}</span><span>${esc(r.t)}</span></div>${r.memo?`<div class="memo">${esc(r.memo)}</div>`:''}<div class="sum">${esc(r.sum)}</div><div class="btns"><button class="btn-primary" type="button" data-load="${i}">呼び出す</button><button class="btn-secondary" type="button" data-del="${i}">削除</button></div></div>`).join('')
+   +'<div style="text-align:right;margin-bottom:12px"><button class="btn-secondary" type="button" id="recClear">記録をすべて削除</button></div>';
+  el.querySelectorAll('[data-load]').forEach(b=>b.onclick=()=>loadOne(a[+b.dataset.load]));
+  el.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{const x=loadRec();x.splice(+b.dataset.del,1);saveRec(x);renderRec();});
+  $('recClear').onclick=()=>{if($('recClear').dataset.ok){saveRec([]);renderRec();}else{$('recClear').dataset.ok='1';$('recClear').textContent='もう一度押すと全部消えます';}};
+}
+function loadOne(r){
+  Object.entries(r.inputs||{}).forEach(([id,v])=>{if($(id))$(id).value=v;});
+  if(r.kind==='d'){document.querySelector('#mainTabs button[data-t="duct"]').click();setMethod(r.method);}
+  else{dev=r.dev;store.dp=store.dp||{};store.dp[dev]=Object.assign({},r.dp||{});buildDevTabs();buildDevParams();
+    document.querySelector('#mainTabs button[data-t="outlet"]').click();
+    if(dev==='smoke'&&parseFloat($('smArea').value)>0)smokeArea();else calcOutlet();}
+  window.scrollTo(0,0);
+}
+$('dRec').onclick=()=>addRec('d');$('oRec').onclick=()=>addRec('o');
+updRecTab();
 if(num('smArea')>0&&dev==='smoke')smokeArea();
 if(store.tab&&store.tab!=='duct'){const b=document.querySelector(`#mainTabs button[data-t="${store.tab}"]`);if(b)b.click();}
 })();
