@@ -145,7 +145,7 @@ footer{text-align:center;font-size:11px;color:var(--color-sub);margin-top:16px}
 <!-- ================= 設定 ================= -->
 <section id="tab-rec" class="hidden">
   <div id="recList"></div>
-  <div class="note" style="margin:4px 4px 12px">記録は最大5件。6件目を記録すると一番古いものから消えます。記録はアプリを開いている間だけ残り、再読み込みやタブを閉じると消えます。</div>
+  <div class="note" style="margin:4px 4px 12px">記録は最大10件。6件目を記録すると一番古いものから消えます。記録はアプリを開いている間だけ残り、再読み込みやタブを閉じると消えます。</div>
 </section>
 
 <section id="tab-setting" class="hidden">
@@ -181,7 +181,7 @@ footer{text-align:center;font-size:11px;color:var(--color-sub);margin-top:16px}
   </div>
 </section>
 
-<footer>ダクト・制気口選定｜栄都工業　Rev07-20261110　©2026 Eito Kogyo</footer>
+<footer>ダクト・制気口選定｜栄都工業　Rev08-20261110　©2026 Eito Kogyo</footer>
 </div>
 
 <script>
@@ -436,7 +436,7 @@ document.querySelectorAll('input[type=number]').forEach(i=>i.addEventListener('f
 
 buildDevTabs();buildDevParams();setMethod(method);calcOutlet();
 /* ---------- 記録（このブラウザのみ・最大5件） ---------- */
-const REC_KEY='eito-duct-records-v1',REC_MAX=5;
+const REC_KEY='eito-duct-records-v1',REC_MAX=10;
 const DUCT_IDS=['dQ','dR','dV1','dL','dK','dPt','dZeta','dV','cShape','cW','cH','cD','dHfix'];
 const METHOD_NAME={cp:'定圧法',sr:'静圧再取得法',tp:'全圧法',vel:'速度法',chk:'サイズ確認'};
 // 記録はアプリを開いている間だけ（メモリ上）。再読み込み・タブを閉じると消える
