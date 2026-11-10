@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ダクト・制気口選定</title>
+<style>
+:root{
+  --color-main:#333333;--color-sub:#888888;--color-accent:#007AFF;--color-bg:#F2F2F7;--color-white:#FFFFFF;
+  --color-blue:#E1F5FE;--color-green:#E8F5E9;--color-purple:#F3E5F5;--color-yellow:#FFF9C4;
+  --font-jp:"游ゴシック","Yu Gothic","Hiragino Kaku Gothic ProN","Meiryo",sans-serif;
+  --font-en:"Inter","Helvetica Neue",Arial,sans-serif;
+  --radius:10px;--shadow:0 2px 12px rgba(0,0,0,0.06);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--font-jp);color:var(--color-main);background:var(--color-bg);line-height:1.6;
+  padding:calc(12px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));}
+.wrap{max-width:760px;margin:0 auto}
+header{background:var(--color-white);border-bottom:2px solid var(--color-accent);border-radius:var(--radius) var(--radius) 0 0;padding:14px 18px;margin-bottom:12px;box-shadow:var(--shadow)}
+header h1{font-size:18px;font-weight:600;margin:0}
+header .meta{font-size:12px;color:var(--color-sub)}
+.seg{display:flex;gap:4px;background:#E5E5EA;border-radius:10px;padding:3px;margin-bottom:12px;flex-wrap:wrap}
+.seg button{flex:1;min-width:max-content;border:none;background:transparent;padding:8px 10px;border-radius:8px;font:inherit;font-size:14px;color:var(--color-main);cursor:pointer}
+.seg button.on{background:var(--color-white);box-shadow:0 1px 4px rgba(0,0,0,.1);color:var(--color-accent);font-weight:600}
+.seg.sm button{font-size:13px;padding:6px 8px}
+.card{background:var(--color-white);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;margin-bottom:12px}
+.card h2{font-size:14px;font-weight:600;margin:0 0 10px;color:var(--color-sub)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px 14px}
+label.f{display:block;font-size:12px;color:var(--color-sub)}
+label.f span.u{float:right}
+input[type=number],input[type=text],select{width:100%;font-family:var(--font-en);font-size:17px;color:var(--color-main);border:none;background:var(--color-bg);border-radius:8px;padding:9px 10px;margin-top:3px;-webkit-appearance:none;appearance:none}
+input:focus,select:focus{outline:2px solid var(--color-accent);outline-offset:0}
+.big input{font-size:26px;font-weight:600;padding:10px 12px}
+.hint{font-size:12px;color:var(--color-sub);margin-top:6px}
+.res-main{display:flex;flex-wrap:wrap;gap:10px}
+.kv{background:var(--color-bg);border-radius:8px;padding:8px 12px;min-width:120px;flex:1}
+.kv .k{font-size:11px;color:var(--color-sub)}
+.kv .v{font-family:var(--font-en);font-size:20px;font-weight:600}
+.kv .v small{font-size:12px;font-weight:400;color:var(--color-sub);margin-left:2px}
+.kv.hl{background:var(--color-blue)}
+.kv.hl .v{color:#0066CC}
+table{width:100%;border-collapse:collapse;font-size:14px;font-family:var(--font-en)}
+th{background:var(--color-bg);font-weight:600;font-family:var(--font-jp);font-size:12px;color:var(--color-sub);padding:7px 8px;text-align:right;border-bottom:2px solid #DDDDDD}
+th:first-child,td:first-child{text-align:left}
+td{padding:7px 8px;border-bottom:1px solid #EEEEEE;text-align:right}
+tr.best td{background:var(--color-green)}
+tr.ng td{color:#BBBBBB}
+.badge{display:inline-block;padding:1px 8px;border-radius:20px;font-size:11px;font-weight:500;font-family:var(--font-jp)}
+.b-green{background:var(--color-green);color:#2E7D32}
+.b-yellow{background:var(--color-yellow);color:#6D5000}
+.b-blue{background:var(--color-blue);color:#0066CC}
+.warn{background:var(--color-yellow);color:#6D5000;border-radius:8px;padding:8px 12px;font-size:13px;margin-top:10px}
+.row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.row>*{flex:1;min-width:130px}
+.chk{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--color-main);margin-top:8px}
+.chk input{width:18px;height:18px}
+.hidden{display:none!important}
+.btn-secondary{background:var(--color-bg);color:var(--color-main);border:none;border-radius:8px;padding:8px 16px;font:inherit;font-size:13px;cursor:pointer}
+footer{text-align:center;font-size:11px;color:var(--color-sub);margin-top:16px}
+.note{font-size:12px;color:var(--color-sub);line-height:1.7}
+.tbl-wrap{overflow-x:auto}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>ダクト・制気口選定</h1>
+  <div class="meta">風量を入れるだけで即計算（メートル法）</div>
+</header>
+
+<div class="seg" id="mainTabs">
+  <button data-t="duct" class="on">ダクト</button>
+  <button data-t="outlet">制気口</button>
+  <button data-t="setting">設定</button>
+</div>
+
+<!-- ================= ダクト ================= -->
+<section id="tab-duct">
+  <div class="seg sm" id="methodTabs">
+    <button data-m="cp" class="on">定圧法</button>
+    <button data-m="sr">静圧再取得法</button>
+    <button data-m="tp">全圧法</button>
+    <button data-m="vel">速度法</button>
+    <button data-m="chk">サイズ確認</button>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <label class="f big">風量<span class="u">m³/h</span><input type="number" id="dQ" inputmode="decimal" value="1000"></label>
+    </div>
+    <div class="grid" style="margin-top:10px">
+      <label class="f m-cp">単位摩擦損失<span class="u">Pa/m</span><input type="number" id="dR" inputmode="decimal" step="0.1" value="1.0"></label>
+      <label class="f m-sr hidden">上流側の風速<span class="u">m/s</span><input type="number" id="dV1" inputmode="decimal" step="0.1" value="8.0"></label>
+      <label class="f m-sr m-tp hidden">区間の相当長<span class="u">m</span><input type="number" id="dL" inputmode="decimal" step="0.5" value="10"></label>
+      <label class="f m-sr hidden">静圧再取得係数<span class="u">−</span><input type="number" id="dK" inputmode="decimal" step="0.05" value="0.75"></label>
+      <label class="f m-tp hidden">区間の許容全圧損失<span class="u">Pa</span><input type="number" id="dPt" inputmode="decimal" step="1" value="15"></label>
+      <label class="f m-tp hidden">局部損失係数の合計 ζ<span class="u">−</span><input type="number" id="dZeta" inputmode="decimal" step="0.1" value="0"></label>
+      <label class="f m-vel hidden">設計風速<span class="u">m/s</span><input type="number" id="dV" inputmode="decimal" step="0.5" value="6.0"></label>
+      <label class="f m-chk hidden">形状<select id="cShape"><option value="rect">角ダクト</option><option value="round">丸ダクト</option></select></label>
+      <label class="f m-chk c-rect hidden">幅 W<span class="u">mm</span><input type="number" id="cW" inputmode="numeric" step="50" value="400"></label>
+      <label class="f m-chk c-rect hidden">高さ H<span class="u">mm</span><input type="number" id="cH" inputmode="numeric" step="50" value="250"></label>
+      <label class="f m-chk c-round hidden">直径 φ<span class="u">mm</span><input type="number" id="cD" inputmode="numeric" step="25" value="300"></label>
+      <label class="f m-hfix">角ダクト高さを固定<span class="u">mm</span><input type="number" id="dHfix" inputmode="numeric" step="50" placeholder="空欄＝自動"></label>
+    </div>
+    <div class="hint" id="methodHint"></div>
+  </div>
+
+  <div class="card" id="ductResult"></div>
+</section>
+
+<!-- ================= 制気口 ================= -->
+<section id="tab-outlet" class="hidden">
+  <div class="seg sm" id="devTabs"></div>
+  <div class="card">
+    <div class="row">
+      <label class="f big">風量<span class="u">m³/h</span><input type="number" id="oQ" inputmode="decimal" value="300"></label>
+    </div>
+    <div id="smokeHelp" class="hidden" style="margin-top:10px">
+      <div class="row">
+        <label class="f">防煙区画の床面積<span class="u">m²</span><input type="number" id="smArea" inputmode="decimal" placeholder="入れると風量を自動計算"></label>
+        <div class="kv"><div class="k">必要排煙量（床面積×1m³/min）</div><div class="v" id="smOut">−</div></div>
+      </div>
+      <div class="hint">床面積を入れると、上の風量に自動で入ります。風量を直接入れたいときは床面積を空欄にしてください。</div>
+    </div>
+    <div class="grid" id="devParams" style="margin-top:10px"></div>
+    <div class="hint" id="devHint"></div>
+  </div>
+  <div class="card" id="outletResult"></div>
+</section>
+
+<!-- ================= 設定 ================= -->
+<section id="tab-setting" class="hidden">
+  <div class="card">
+    <h2>ダクトの計算条件</h2>
+    <div class="grid">
+      <label class="f">内面の粗さ ε<span class="u">mm</span><input type="number" id="sEps" inputmode="decimal" step="0.01" value="0.15"></label>
+      <label class="f">空気の密度 ρ<span class="u">kg/m³</span><input type="number" id="sRho" inputmode="decimal" step="0.01" value="1.20"></label>
+      <label class="f">動粘性係数 ν<span class="u">×10⁻⁶ m²/s</span><input type="number" id="sNu" inputmode="decimal" step="0.1" value="15.1"></label>
+      <label class="f">風速の警告値<span class="u">m/s</span><input type="number" id="sVmax" inputmode="decimal" step="0.5" value="10"></label>
+    </div>
+  </div>
+  <div class="card">
+    <h2>角ダクトのサイズ</h2>
+    <div class="grid">
+      <label class="f">刻み<span class="u">mm</span><input type="number" id="sStep" inputmode="numeric" step="50" value="50"></label>
+      <label class="f">最小寸法<span class="u">mm</span><input type="number" id="sMin" inputmode="numeric" step="50" value="100"></label>
+      <label class="f">アスペクト比の上限<span class="u">:1</span><input type="number" id="sAsp" inputmode="decimal" step="0.5" value="4"></label>
+    </div>
+  </div>
+  <div class="card">
+    <h2>丸ダクトの規格サイズ（φmm・カンマ区切り）</h2>
+    <input type="text" id="sRound" value="100,125,150,175,200,225,250,275,300,325,350,375,400,450,500,550,600,650,700,750,800,850,900,950,1000,1100,1200,1300,1400,1500">
+  </div>
+  <div class="card">
+    <button class="btn-secondary" id="resetAll" type="button">すべての設定を初期値に戻す</button>
+    <div class="note" style="margin-top:12px">
+      ・摩擦損失はダルシー・ワイズバッハ式＋コールブルック式で計算しています。<br>
+      ・角ダクトは相当直径 De＝1.30×(a·b)<sup>0.625</sup>／(a＋b)<sup>0.25</sup> で円形に換算しています（速度法だけは断面積で選定）。<br>
+      ・制気口の開口率と風速は一般的な初期値です。メーカーのカタログ値に合わせて変更してください（変更した値はこの端末に保存されます）。開口率は1.0を超えて入力できません。<br>
+      ・計算結果は参考値です。最終的なサイズは技術者が確認してください。
+    </div>
+  </div>
+</section>
+
+<footer>ダクト・制気口選定｜栄都工業　Rev03-20261110　©2026 Eito Kogyo</footer>
+</div>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const LS_KEY='eito-duct-selector-v1';
+let store={};
+try{store=JSON.parse(localStorage.getItem(LS_KEY)||'{}')||{};}catch(e){store={};}
+function save(){try{localStorage.setItem(LS_KEY,JSON.stringify(store));}catch(e){}}
+const num=(id)=>{const v=parseFloat($(id).value);return isFinite(v)?v:NaN;};
+const f1=(x,d=1)=>isFinite(x)?x.toFixed(d):'−';
+const fmt0=x=>isFinite(x)?Math.round(x).toLocaleString():'−';
+
+/* ---------- 入力値の保存・復元 ---------- */
+const persistIds=['dQ','dR','dV1','dL','dK','dPt','dZeta','dV','cShape','cW','cH','cD','dHfix','oQ','smArea','sEps','sRho','sNu','sVmax','sStep','sMin','sAsp','sRound'];
+const defaults={};
+persistIds.forEach(id=>{defaults[id]=$(id).value; if(store.inputs&&store.inputs[id]!==undefined)$(id).value=store.inputs[id];});
+function persistInputs(){store.inputs={};persistIds.forEach(id=>store.inputs[id]=$(id).value);save();}
+
+/* ---------- 物性・摩擦 ---------- */
+function P(){return{eps:(num('sEps')||0.15)/1000,rho:num('sRho')||1.2,nu:(num('sNu')||15.1)*1e-6,vmax:num('sVmax')||10,
+  step:Math.max(5,num('sStep')||50),min:Math.max(10,num('sMin')||100),asp:Math.max(1,num('sAsp')||4)};}
+function lambdaOf(Re,relR){
+  if(Re<=0)return NaN;
+  if(Re<2300)return 64/Re;
+  let l=0.25/Math.pow(Math.log10(relR/3.7+5.74/Math.pow(Re,0.9)),2);
+  for(let i=0;i<30;i++){const n=Math.pow(-2*Math.log10(relR/3.7+2.51/(Re*Math.sqrt(l))),-2);if(Math.abs(n-l)<1e-10){l=n;break;}l=n;}
+  return l;
+}
+// q:m3/s, D:m（円形） -> {v,R,Re}
+function roundFlow(q,D,p){const A=Math.PI*D*D/4,v=q/A,Re=v*D/p.nu,l=lambdaOf(Re,p.eps/D);return{v,R:l/D*p.rho*v*v/2,Re};}
+function De(a,b){return 1.30*Math.pow(a*b,0.625)/Math.pow(a+b,0.25);} // a,b:m
+function rectFlow(q,a,b,p){const d=De(a,b),r=roundFlow(q,d,p);return{v:q/(a*b),R:r.R,De:d};}
+// 単調関数の根（D: 0.01〜6m, 対数二分法）
+function solveD(fn){let lo=Math.log(0.01),hi=Math.log(6);const s=fn(Math.exp(lo));if(!isFinite(s))return NaN;
+  for(let i=0;i<80;i++){const m=(lo+hi)/2,fm=fn(Math.exp(m));if(Math.sign(fm)===Math.sign(s))lo=m;else hi=m;}return Math.exp((lo+hi)/2);}
+
+/* ---------- 角ダクト候補 ---------- */
+// ok(Wmm,Hmm) が真になる最小サイズを高さごとに列挙（W≥H）
+function rectCandidates(ok,p){
+  const out=[];const st=p.step,mn=Math.ceil(p.min/st)*st;
+  for(let H=mn;H<=3000;H+=st){
+    let W=null;
+    for(let w=H;w<=H*p.asp+1e-9;w+=st){if(ok(w,H)){W=w;break;}}
+    if(W!==null)out.push({W,H});
+    if(W===H)break;
+  }
+  return out;
+}
+function rectForFixedH(ok,H,p){const st=p.step,mn=Math.ceil(p.min/st)*st;for(let w=mn;w<=8000;w+=st){if(ok(w,H))return{W:w,H};}return null;}
+function roundStdList(){return $('sRound').value.split(/[,、\s]+/).map(Number).filter(x=>x>0).sort((a,b)=>a-b);}
+
+/* ---------- ダクト計算 ---------- */
+let method=store.method||'cp';
+const hints={
+  cp:'1mあたりの摩擦損失を一定にしてサイズを決めます（一般的な方法）。',
+  sr:'上流側の風速が落ちた分の静圧の回復で、この区間の摩擦損失を打ち消すサイズを求めます。分岐ごとに順番に計算してください。',
+  tp:'区間に使える全圧損失（直管の摩擦＋局部損失）からサイズを求めます。',
+  vel:'風速を一定にして断面積からサイズを決めます。角ダクトも断面積で選定します。',
+  chk:'任意のサイズで、風速と摩擦損失を確認します。'
+};
+function setMethod(m){
+  method=m;store.method=m;save();
+  document.querySelectorAll('#methodTabs button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));
+  ['cp','sr','tp','vel','chk'].forEach(k=>document.querySelectorAll('.m-'+k).forEach(el=>el.classList.add('hidden')));
+  document.querySelectorAll('.m-'+m).forEach(el=>el.classList.remove('hidden'));
+  document.querySelectorAll('.m-hfix').forEach(el=>el.classList.toggle('hidden',m==='chk'));
+  if(m==='chk')updShape();
+  $('methodHint').textContent=hints[m];
+  calcDuct();
+}
+function updShape(){const r=$('cShape').value==='round';
+  document.querySelectorAll('.c-rect').forEach(el=>el.classList.toggle('hidden',r||method!=='chk'));
+  document.querySelectorAll('.c-round').forEach(el=>el.classList.toggle('hidden',!r||method!=='chk'));}
+
+function kv(k,v,u,hl){return `<div class="kv${hl?' hl':''}"><div class="k">${k}</div><div class="v">${v}<small>${u||''}</small></div></div>`;}
+function velBadge(v,p){return v>p.vmax?' <span class="badge b-yellow">風速超過</span>':'';}
+
+function calcDuct(){
+  persistInputs();
+  const p=P(),Qh=num('dQ'),out=$('ductResult');
+  if(!(Qh>0)){out.innerHTML='<div class="note">風量を入れてください。</div>';return;}
+  const q=Qh/3600;
+  if(method==='chk')return calcCheck(q,p,out);
+
+  let Dreq,okRect,okRound,extra='',secL=num('dL');
+  if(method==='vel'){
+    const v=num('dV');if(!(v>0)){out.innerHTML='<div class="note">設計風速を入れてください。</div>';return;}
+    const A=q/v;Dreq=Math.sqrt(4*A/Math.PI);
+    okRect=(w,h)=>w*h/1e6>=A-1e-12;
+    okRound=d=>Math.PI*d*d/4/1e6>=A-1e-12;
+    extra=kv('必要断面積',f1(A*1e4,0),'cm²');
+  }else{
+    if(method==='cp'){
+      const R=num('dR');if(!(R>0)){out.innerHTML='<div class="note">単位摩擦損失を入れてください。</div>';return;}
+      Dreq=solveD(D=>roundFlow(q,D,p).R-R);
+    }else if(method==='sr'){
+      const v1=num('dV1'),k=num('dK');
+      if(!(v1>0&&secL>0&&k>0)){out.innerHTML='<div class="note">上流風速・相当長・再取得係数を入れてください。</div>';return;}
+      Dreq=solveD(D=>{const r=roundFlow(q,D,p);return k*p.rho/2*(v1*v1-r.v*r.v)-r.R*secL;});
+    }else if(method==='tp'){
+      const Pt=num('dPt'),z=num('dZeta')||0;
+      if(!(Pt>0&&secL>0)){out.innerHTML='<div class="note">許容全圧損失と相当長を入れてください。</div>';return;}
+      Dreq=solveD(D=>{const r=roundFlow(q,D,p);return r.R*secL+z*p.rho*r.v*r.v/2-Pt;});
+    }
+    const Dm=Dreq*1000;
+    okRect=(w,h)=>De(w/1000,h/1000)*1000>=Dm-1e-6;
+    okRound=d=>d>=Dm-1e-6;
+  }
+  if(!isFinite(Dreq)){out.innerHTML='<div class="note">条件の範囲で解が見つかりませんでした。入力を見直してください。</div>';return;}
+
+  const rq=roundFlow(q,Dreq,p);
+  let html='<h2>計算結果</h2><div class="res-main">'+kv('必要な円形ダクト径',fmt0(Dreq*1000),'mm',true)+kv('そのときの風速',f1(rq.v,2),'m/s')+kv('そのときの摩擦損失',f1(rq.R,2),'Pa/m')+extra+'</div>';
+  if(method==='sr'){const v1=num('dV1'),k=num('dK');html+=`<div class="hint">静圧の回復量 ${f1(k*p.rho/2*(v1*v1-rq.v*rq.v),1)} Pa ＝ 区間の摩擦損失 ${f1(rq.R*secL,1)} Pa</div>`;}
+  if(method==='tp'){const z=num('dZeta')||0;html+=`<div class="hint">直管の摩擦 ${f1(rq.R*secL,1)} Pa ＋ 局部損失 ${f1(z*p.rho*rq.v*rq.v/2,1)} Pa</div>`;}
+  const lossCol=(method==='sr'||method==='tp');
+
+  // 丸ダクト
+  const std=roundStdList();let idx=std.findIndex(okRound);
+  html+='<h2 style="margin-top:16px">丸ダクト（スパイラル規格）</h2>';
+  if(idx<0)html+='<div class="note">規格サイズの範囲を超えています。</div>';
+  else{
+    html+='<div class="tbl-wrap"><table><tr><th>サイズ</th><th>風速 m/s</th><th>摩擦 Pa/m</th>'+(lossCol?'<th>区間損失 Pa</th>':'')+'<th></th></tr>';
+    [idx-1,idx,idx+1].forEach(i=>{if(i<0||i>=std.length)return;const d=std[i],r=roundFlow(q,d/1000,p);
+      html+=`<tr class="${i===idx?'best':''}"><td>φ${d}</td><td>${f1(r.v,2)}</td><td>${f1(r.R,2)}</td>${lossCol?`<td>${f1(r.R*secL,1)}</td>`:''}<td>${i===idx?'<span class="badge b-green">選定</span>':(i<idx?'<span class="badge b-yellow">不足</span>':'')}${velBadge(r.v,p)}</td></tr>`;});
+    html+='</table></div>';
+  }
+
+  // 角ダクト
+  html+='<h2 style="margin-top:16px">角ダクト（W×H）</h2>';
+  const Hfix=num('dHfix');
+  const rowRect=(c,best)=>{const r=rectFlow(q,c.W/1000,c.H/1000,p),asp=Math.max(c.W,c.H)/Math.min(c.W,c.H);
+    return `<tr class="${best?'best':''}"><td>${c.W}×${c.H}</td><td>${f1(asp,2)}</td><td>${f1(r.v,2)}</td><td>${f1(r.R,2)}</td>${lossCol?`<td>${f1(r.R*secL,1)}</td>`:''}<td>${best?'<span class="badge b-green">おすすめ</span>':''}${asp>p.asp+1e-9?' <span class="badge b-yellow">アスペクト比超過</span>':''}${velBadge(r.v,p)}</td></tr>`;};
+  const head='<div class="tbl-wrap"><table><tr><th>W×H mm</th><th>縦横比</th><th>風速 m/s</th><th>摩擦 Pa/m</th>'+(lossCol?'<th>区間損失 Pa</th>':'')+'<th></th></tr>';
+  if(Hfix>0){
+    const c=rectForFixedH(okRect,Hfix,p);
+    html+=c?head+rowRect(c,true)+'</table></div>':'<div class="note">この高さでは選定できません。</div>';
+  }else{
+    const cs=rectCandidates(okRect,p);
+    if(!cs.length)html+='<div class="note">候補がありません。設定のアスペクト比や刻みを見直してください。</div>';
+    else{
+      // おすすめ＝周長（＝鉄板量）が最小、同じなら縦横比が小さい方
+      let bi=0;cs.forEach((c,i)=>{const a=cs[bi];if(c.W+c.H<a.W+a.H||(c.W+c.H===a.W+a.H&&c.W/c.H<a.W/a.H))bi=i;});
+      html+=head+cs.map((c,i)=>rowRect(c,i===bi)).join('')+'</table></div>';
+      html+='<div class="hint">「おすすめ」は周長が最小（鉄板が一番少ない）のサイズです。天井内の高さに制限があるときは「角ダクト高さを固定」に入れてください。</div>';
+    }
+  }
+  out.innerHTML=html;
+}
+function calcCheck(q,p,out){
+  let r,label,asp=null;
+  if($('cShape').value==='round'){const D=num('cD');if(!(D>0)){out.innerHTML='<div class="note">直径を入れてください。</div>';return;}
+    r=roundFlow(q,D/1000,p);label='φ'+D;}
+  else{const W=num('cW'),H=num('cH');if(!(W>0&&H>0)){out.innerHTML='<div class="note">幅と高さを入れてください。</div>';return;}
+    r=rectFlow(q,W/1000,H/1000,p);label=W+'×'+H;asp=Math.max(W,H)/Math.min(W,H);}
+  let html='<h2>'+label+' の確認結果</h2><div class="res-main">'+kv('風速',f1(r.v,2),'m/s',true)+kv('摩擦損失',f1(r.R,2),'Pa/m',true)+(r.De?kv('相当直径 De',fmt0(r.De*1000),'mm'):'')+(asp?kv('縦横比',f1(asp,2),':1'):'')+'</div>';
+  if(r.v>p.vmax)html+=`<div class="warn">風速が警告値（${p.vmax} m/s）を超えています。</div>`;
+  if(asp&&asp>p.asp+1e-9)html+=`<div class="warn">縦横比が上限（${p.asp}:1）を超えています。</div>`;
+  out.innerHTML=html;
+}
+
+/* ---------- 制気口 ---------- */
+const DEVICES=[
+  {id:'anemoR',name:'アネモ 丸形',type:'neckRound',v:4.0,sizes:'150,200,250,300,350,400,450,500,600',hint:'ネック径（φ）とネック風速で選定します。号数とネック径の対応は、使うメーカーのカタログに合わせて「ネック径の一覧」を直してください。'},
+  {id:'anemoS',name:'アネモ 角形',type:'neckSquare',v:4.0,sizes:'150,200,250,300,350,400,450,500,600',hint:'角形ネック（□）とネック風速で選定します。ネック寸法の一覧はメーカーに合わせて直してください。'},
+  {id:'line',name:'ライン（BL・CL）',type:'line',v:3.0,k:0.8,n:2,w:25,round:50,hint:'L寸法＝風量 ÷（風速×スロット数×スロット幅×開口率）で求め、丸めの単位で切り上げます。'},
+  {id:'hs',name:'グリル HS',type:'grille',v:2.5,k:0.75,maxH:1000,hint:'有効開口面積（外形×開口率）での風速で選定します。'},
+  {id:'vhs',name:'グリル VHS',type:'grille',v:2.5,k:0.70,maxH:1000,hint:'有効開口面積（外形×開口率）での風速で選定します。'},
+  {id:'oag',name:'OAガラリ',type:'grille',v:2.5,k:0.35,maxH:2000,hint:'外気取入れは雨の吹込みを避けるため、有効風速を低めにします。開口率はガラリの形式で大きく変わるのでカタログ値に合わせてください。'},
+  {id:'eag',name:'EAガラリ',type:'grille',v:3.5,k:0.35,maxH:2000,hint:'有効開口面積での風速で選定します。開口率はカタログ値に合わせてください。'},
+  {id:'smoke',name:'排煙口',type:'grille',v:10,k:0.9,maxH:1500,hint:'開口面積での吸込風速で選定します。排煙量は所轄の基準に合わせて確認してください。'}
+];
+let dev=store.dev||'anemoR';
+function devParams(d){const s=(store.dp&&store.dp[d.id])||{};const r=Object.assign({},d,s);if(parseFloat(r.k)>1)r.k=1;return r;}
+function setDevParam(id,key,val){store.dp=store.dp||{};store.dp[id]=store.dp[id]||{};store.dp[id][key]=val;save();}
+function buildDevTabs(){
+  $('devTabs').innerHTML=DEVICES.map(d=>`<button data-d="${d.id}" class="${d.id===dev?'on':''}">${d.name}</button>`).join('');
+  $('devTabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{dev=b.dataset.d;store.dev=dev;save();buildDevTabs();buildDevParams();calcOutlet();});
+}
+function field(label,unit,key,val,step,type){return `<label class="f">${label}<span class="u">${unit}</span><input ${type==='text'?'type="text"':'type="number" inputmode="decimal"'} data-k="${key}" step="${step||'any'}"${key==='k'?' min="0" max="1"':''} value="${val}"></label>`;}
+function buildDevParams(){
+  const d=devParams(DEVICES.find(x=>x.id===dev));let h='';
+  if(d.type==='neckRound'||d.type==='neckSquare'){h+=field('ネック風速の上限','m/s','v',d.v,0.1);h+=field('ネック'+(d.type==='neckRound'?'径':'寸法')+'の一覧','mm','sizes',d.sizes,null,'text');}
+  else if(d.type==='line'){h+=field('吹出風速','m/s','v',d.v,0.1);h+=field('開口率','−','k',d.k,0.05);h+=field('スロット数','本','n',d.n,1);h+=field('スロット幅','mm','w',d.w,1);h+=field('L寸法の丸め','mm','round',d.round,10);}
+  else{h+=field(d.id==='smoke'?'吸込風速の上限':'有効風速の上限','m/s','v',d.v,0.1);h+=field('開口率','−','k',d.k,0.05);h+=`<label class="f">高さを固定<span class="u">mm</span><input type="number" inputmode="numeric" data-k="hfix" step="50" value="${d.hfix||''}" placeholder="空欄＝自動"></label>`;}
+  $('devParams').innerHTML=h+'<div style="display:flex;align-items:flex-end"><button class="btn-secondary" id="devReset" type="button">この器具を初期値に戻す</button></div>';
+  $('devParams').querySelectorAll('input').forEach(inp=>inp.addEventListener('input',()=>{if(inp.dataset.k==='k'&&parseFloat(inp.value)>1)inp.value='1';setDevParam(dev,inp.dataset.k,inp.type==='text'?inp.value:(inp.value===''?'':parseFloat(inp.value)));calcOutlet();}));
+  $('devReset').onclick=()=>{if(store.dp)delete store.dp[dev];save();buildDevParams();calcOutlet();};
+  $('devHint').textContent=d.hint;
+  $('smokeHelp').classList.toggle('hidden',dev!=='smoke');
+}
+function calcOutlet(){
+  persistInputs();
+  const d=devParams(DEVICES.find(x=>x.id===dev)),Qh=num('oQ'),out=$('outletResult'),p=P();
+  if(!(Qh>0)){out.innerHTML='<div class="note">風量を入れてください。</div>';return;}
+  const q=Qh/3600,v=parseFloat(d.v);
+  if(!(v>0)){out.innerHTML='<div class="note">風速を入れてください。</div>';return;}
+  let html='<h2>'+d.name+' の選定結果</h2>';
+  if(d.type==='neckRound'||d.type==='neckSquare'){
+    const sizes=String(d.sizes).split(/[,、\s]+/).map(Number).filter(x=>x>0).sort((a,b)=>a-b);
+    const area=s=>d.type==='neckRound'?Math.PI*s*s/4/1e6:s*s/1e6;
+    const sel=sizes.findIndex(s=>q/area(s)<=v+1e-9);
+    html+='<div class="res-main">'+kv('必要なネック面積',f1(q/v*1e4,0),'cm²')+(sel>=0?kv('選定',(d.type==='neckRound'?'φ':'□')+sizes[sel],'mm',true)+kv('ネック風速',f1(q/area(sizes[sel]),2),'m/s'):'')+'</div>';
+    if(sel<0)html+='<div class="warn">一覧の最大サイズでもネック風速が上限を超えます。台数を分けてください（例：2台なら1台あたり '+fmt0(Qh/2)+' m³/h）。</div>';
+    html+='<div class="tbl-wrap" style="margin-top:12px"><table><tr><th>ネック</th><th>面積 cm²</th><th>ネック風速 m/s</th><th></th></tr>';
+    sizes.forEach((s,i)=>{const vv=q/area(s);html+=`<tr class="${i===sel?'best':(vv>v?'ng':'')}"><td>${d.type==='neckRound'?'φ':'□'}${s}</td><td>${f1(area(s)*1e4,0)}</td><td>${f1(vv,2)}</td><td>${i===sel?'<span class="badge b-green">選定</span>':''}</td></tr>`;});
+    html+='</table></div>';
+  }else if(d.type==='line'){
+    const k=Math.min(1,parseFloat(d.k)),n=parseFloat(d.n),w=parseFloat(d.w),rd=parseFloat(d.round)||1;
+    if(!(k>0&&n>0&&w>0)){out.innerHTML='<div class="note">開口率・スロット数・スロット幅を入れてください。</div>';return;}
+    const Lreq=q/(v*n*(w/1000)*k)*1000,L=Math.ceil(Lreq/rd-1e-9)*rd,vv=q/(n*(w/1000)*(L/1000)*k);
+    html+='<div class="res-main">'+kv('必要なL寸法',fmt0(Lreq),'mm')+kv('選定 L',fmt0(L),'mm',true)+kv('吹出風速',f1(vv,2),'m/s')+kv('1mあたり風量',fmt0(Qh/(L/1000)),'m³/h·m')+'</div>';
+    html+=`<div class="hint">${n}スロット × 幅${w}mm × L${fmt0(L)}mm × 開口率${k}</div>`;
+  }else{
+    const k=Math.min(1,parseFloat(d.k));if(!(k>0)){out.innerHTML='<div class="note">開口率を入れてください。</div>';return;}
+    const A=q/(v*k); // 外形面積 m2
+    const ok=(W,H)=>W*H/1e6>=A-1e-12;
+    const g={step:p.step,min:p.min,asp:99};
+    let cs=[];const hfix=parseFloat(d.hfix);
+    if(hfix>0){const c=rectForFixedH(ok,hfix,g);if(c)cs=[c];}
+    else{const st=p.step,mn=Math.ceil(p.min/st)*st;for(let H=mn;H<=d.maxH;H+=st){const W=Math.max(H,Math.ceil(A*1e6/H/st-1e-9)*st);cs.push({W,H});if(W===H)break;}
+      cs=cs.filter(c=>c.W/c.H<=6);}
+    html+='<div class="res-main">'+kv('必要な外形面積',f1(A*1e4,0),'cm²',true)+kv('必要な有効開口面積',f1(q/v*1e4,0),'cm²')+'</div>';
+    if(!cs.length)html+='<div class="note">候補がありません。台数を分けるか、高さを変えてください。</div>';
+    else{
+      let bi=0;cs.forEach((c,i)=>{const a=cs[bi];if(c.W*c.H<a.W*a.H-1e-9||(Math.abs(c.W*c.H-a.W*a.H)<1e-9&&c.W/c.H<a.W/a.H))bi=i;});
+      html+='<div class="tbl-wrap" style="margin-top:12px"><table><tr><th>W×H mm</th><th>外形 cm²</th><th>有効 cm²</th><th>'+(d.id==='smoke'?'吸込':'有効')+'風速 m/s</th><th></th></tr>';
+      cs.forEach((c,i)=>{const af=c.W*c.H/1e6;html+=`<tr class="${i===bi?'best':''}"><td>${c.W}×${c.H}</td><td>${f1(af*1e4,0)}</td><td>${f1(af*k*1e4,0)}</td><td>${f1(q/(af*k),2)}</td><td>${i===bi?'<span class="badge b-green">おすすめ</span>':''}</td></tr>`;});
+      html+='</table></div><div class="hint">「おすすめ」は面積が一番小さいサイズです。</div>';
+    }
+  }
+  out.innerHTML=html;
+}
+
+/* ---------- イベント ---------- */
+document.querySelectorAll('#mainTabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#mainTabs button').forEach(x=>x.classList.toggle('on',x===b));
+  ['duct','outlet','setting'].forEach(t=>$('tab-'+t).classList.toggle('hidden',t!==b.dataset.t));
+  store.tab=b.dataset.t;save();
+  if(b.dataset.t==='duct')calcDuct();if(b.dataset.t==='outlet')calcOutlet();
+});
+document.querySelectorAll('#methodTabs button').forEach(b=>b.onclick=()=>setMethod(b.dataset.m));
+['dQ','dR','dV1','dL','dK','dPt','dZeta','dV','cW','cH','cD','dHfix'].forEach(id=>$(id).addEventListener('input',calcDuct));
+$('cShape').addEventListener('change',()=>{updShape();calcDuct();});
+['sEps','sRho','sNu','sVmax','sStep','sMin','sAsp','sRound'].forEach(id=>$(id).addEventListener('input',()=>{persistInputs();}));
+$('oQ').addEventListener('input',calcOutlet);
+function smokeArea(){const a=num('smArea');if(a>0){$('oQ').value=Math.round(a*60);$('smOut').innerHTML=fmt0(a)+'<small>m³/min</small> ＝ '+fmt0(a*60)+'<small>m³/h</small>';}else $('smOut').textContent='−';calcOutlet();}
+$('smArea').addEventListener('input',smokeArea);
+$('resetAll').onclick=()=>{persistIds.forEach(id=>$(id).value=defaults[id]);store={};save();method='cp';dev='anemoR';buildDevTabs();buildDevParams();setMethod('cp');calcOutlet();};
+document.querySelectorAll('input[type=number]').forEach(i=>i.addEventListener('focus',()=>{try{i.select();}catch(e){}}));
+
+buildDevTabs();buildDevParams();setMethod(method);calcOutlet();
+if(num('smArea')>0&&dev==='smoke')smokeArea();
+if(store.tab&&store.tab!=='duct'){const b=document.querySelector(`#mainTabs button[data-t="${store.tab}"]`);if(b)b.click();}
+})();
+</script>
+</body>
+</html>
