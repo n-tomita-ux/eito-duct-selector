@@ -60,6 +60,22 @@ tr.ng td{color:#BBBBBB}
 .chk{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--color-main);margin-top:8px}
 .chk input{width:18px;height:18px}
 .hidden{display:none!important}
+.calc{margin-top:16px;border-top:1px solid #EEEEEE;padding-top:10px}
+.calc summary{cursor:pointer;color:var(--color-accent);font-weight:600;font-size:14px;list-style:none}
+.calc summary::-webkit-details-marker{display:none}
+.calc summary::before{content:"▶ ";font-size:11px}.calc[open] summary::before{content:"▼ "}
+.calc ol{margin:10px 0 0;padding-left:20px}.calc li{margin:8px 0;font-size:13px;line-height:1.7}
+.calc .f{display:block;font-family:var(--font-en);background:var(--color-bg);border-radius:6px;padding:6px 10px;margin-top:4px;font-size:13px;overflow-x:auto;white-space:nowrap}
+.calc .why{display:block;color:var(--color-sub);font-size:12px;margin-top:2px}
+.ex details{background:var(--color-white);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:10px;padding:0}
+.ex summary{cursor:pointer;padding:14px 18px;font-weight:600;font-size:15px;list-style:none}
+.ex summary::-webkit-details-marker{display:none}
+.ex summary::after{content:"＋";float:right;color:var(--color-sub)}.ex details[open] summary::after{content:"－"}
+.ex .body{padding:0 18px 16px;font-size:14px;line-height:1.8}
+.ex .body p{margin:6px 0}.ex .body ul{margin:6px 0;padding-left:20px}
+.ex .fx{display:block;font-family:var(--font-en);background:var(--color-bg);border-radius:6px;padding:8px 12px;margin:6px 0;overflow-x:auto;white-space:nowrap;font-size:13px}
+.ex table{font-size:13px;margin:8px 0}.ex th,.ex td{text-align:left}
+.ex .tag{display:inline-block;background:var(--color-yellow);color:#6D5000;border-radius:20px;padding:1px 10px;font-size:11px;margin-left:6px;vertical-align:middle}
 .btn-primary{background:var(--color-accent);color:#fff;border:none;border-radius:8px;padding:10px 20px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
 .rec-item .head{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--color-sub)}
 .rec-item .memo{font-weight:600;font-size:15px;margin:2px 0}
@@ -83,6 +99,7 @@ footer{text-align:center;font-size:11px;color:var(--color-sub);margin-top:16px}
   <button data-t="duct" class="on">ダクト</button>
   <button data-t="outlet">制気口</button>
   <button data-t="rec" id="recTabBtn">記録</button>
+  <button data-t="ex">解説</button>
   <button data-t="setting">設定</button>
 </div>
 
@@ -148,6 +165,96 @@ footer{text-align:center;font-size:11px;color:var(--color-sub);margin-top:16px}
   <div class="note" style="margin:4px 4px 12px">記録は最大10件。6件目を記録すると一番古いものから消えます。記録はアプリを開いている間だけ残り、再読み込みやタブを閉じると消えます。</div>
 </section>
 
+<section id="tab-ex" class="hidden ex">
+  <div class="card note" style="font-size:13px">新人向けの解説です。上から順に読むと、ダクトと制気口の選び方の流れがわかります。各項目をタップすると開きます。<br>数値は一般的な目安で、<b>社内基準とはまだ照合していません</b>。設計図・特記仕様書・元請の指示があれば、そちらを優先してください。</div>
+
+  <details><summary>1. まず押さえる言葉</summary><div class="body">
+    <p><b>風量 Q</b>：1時間（または1秒）に流れる空気の量。単位は m³/h（m³/s）。</p>
+    <p><b>風速 v</b>：空気が進む速さ。単位は m/s。</p>
+    <p><b>断面積 A</b>：ダクトを輪切りにしたときの面積。3つの関係はこれだけ覚えればOK：</p>
+    <span class="fx">風量 Q ＝ 断面積 A × 風速 v</span>
+    <p>同じ風量なら、ダクトを太くすると風速は下がり、細くすると上がります。</p>
+    <p><b>静圧</b>：空気がダクトの壁を押す力。ファンがつくる「押し出す力」です。<br><b>動圧</b>：空気が動いていることによる圧力。<span style="font-family:var(--font-en)">ρv²/2</span>で求めます（ρ＝空気の密度 約1.2kg/m³）。<br><b>全圧</b>：静圧＋動圧。</p>
+    <p><b>摩擦損失 R（Pa/m）</b>：ダクト1mあたり、壁とのこすれで失う圧力。<br><b>局部損失</b>：曲がり（エルボ）・分岐・ダンパなどで失う圧力。<span style="font-family:var(--font-en)">ζ（ゼータ）× 動圧</span>で求めます。<br><b>相当長</b>：局部損失を「同じ損失になる直管の長さ」に置き換えて、直管の長さに足したもの。</p>
+  </div></details>
+
+  <details><summary>2. なぜ風速を抑えるのか</summary><div class="body">
+    <p>ダクトを細くすると材料費や天井内のスペースは減りますが、風速が上がると次の問題が出ます。</p>
+    <ul><li><b>騒音</b>：風切り音・吹出し音が大きくなる（静かな部屋ほど風速を低く）</li>
+    <li><b>圧力損失が増える</b>：損失は風速のおよそ2乗で増える → 大きなファンが必要になり、電気代も上がる</li>
+    <li><b>振動・びびり音</b>：特に扁平な角ダクト</li></ul>
+    <p>逆に太すぎると、材料・保温・吊りが増え、天井内に入らなくなります。<b>「音」「損失」「コスト・納まり」のバランス</b>でサイズを決めます。</p>
+  </div></details>
+
+  <details><summary>3. サイズを決める流れ</summary><div class="body">
+    <ul><li>① 系統図をかく（ファン → 主ダクト → 枝ダクト → 制気口）</li>
+    <li>② 制気口ごとの風量を決め、上流に向かって足していき、各区間の風量を出す</li>
+    <li>③ 方式（ふつうは定圧法）で各区間の太さを決める</li>
+    <li>④ 天井内の高さに合わせて角ダクトの寸法にする（このアプリの「高さを固定」）</li>
+    <li>⑤ 風速が目安を超えていないか確認する</li>
+    <li>⑥ 一番遠い（損失が一番大きい）ルートの損失を合計して、ファンの静圧を決める</li></ul>
+  </div></details>
+
+  <details><summary>4. 4つの方式の違い</summary><div class="body">
+    <p><b>定圧法（等摩擦法）</b>：どの区間も「1mあたりの摩擦損失」を同じにして太さを決める。手計算やダクト線図で決めやすく、一般的な低速ダクトの標準。目安は 1Pa/m 前後。</p>
+    <p><b>速度法</b>：先に風速を決めて、断面積 ＝ 風量 ÷ 風速 で決める。いちばん簡単。ガラリまわり・短い区間・換気扇のダクトなどに。</p>
+    <p><b>静圧再取得法</b>：風速が落ちると動圧の一部が静圧に戻る（再取得）性質を使い、その戻り分で次の区間の損失を打ち消す。長い主ダクトや高速ダクトで、各分岐の静圧をそろえたいときに。<b>上流から1区間ずつ順に</b>計算する。</p>
+    <p><b>全圧法</b>：区間ごとに「使ってよい圧力（全圧損失）」を決め、直管の摩擦＋局部損失がそれに収まる太さを選ぶ。損失を一番正確に管理できる方法で、ファン静圧の計算にもそのままつながる。</p>
+  </div></details>
+
+  <details><summary>5. 摩擦損失の計算のしくみ</summary><div class="body">
+    <p>このアプリは、ダクト線図（摩擦損失線図）と同じ計算を式で行っています。</p>
+    <span class="fx">R ＝ λ ÷ D × ρv²/2　（ダルシー・ワイズバッハの式）</span>
+    <p>λ（管摩擦係数）は、流れの状態を表す <b>レイノルズ数 Re</b> と、ダクト内面の<b>粗さ ε</b> から求めます（コールブルックの式）。</p>
+    <span class="fx">Re ＝ v × D ÷ ν　（ν：空気の動粘性係数 約15×10⁻⁶ m²/s）</span>
+    <p>粗さ ε は亜鉛鉄板で 0.15mm 前後が一般的な値です（「設定」タブで変更できます）。</p>
+    <p>ポイント：損失は<b>風速の2乗</b>に比例し、<b>直径に反比例</b>します。少し太くするだけで損失は大きく下がります。</p>
+  </div></details>
+
+  <details><summary>6. 角ダクトの換算とアスペクト比</summary><div class="body">
+    <p>角ダクトは「同じ風量を流したとき、摩擦損失が同じになる丸ダクトの直径」＝<b>相当直径 De</b> に置き換えて計算します。</p>
+    <span class="fx">De ＝ 1.30 × (a×b)^0.625 ÷ (a+b)^0.25</span>
+    <p>例：400×250 → De ≒ 343mm。断面積で換算した直径（357mm）より小さくなります。角ダクトは隅の空気が流れにくいためです。</p>
+    <p><b>アスペクト比（長辺÷短辺）は4以下</b>が目安です。扁平にすると、同じ断面積でも周りの長さが増えて、鉄板・保温材・摩擦損失が増え、剛性が落ちてびびり音も出やすくなります。天井内が低くて扁平にせざるを得ないときは、系統を分けることも検討します。</p>
+  </div></details>
+
+  <details><summary>7. 制気口の選び方</summary><div class="body">
+    <p><b>アネモ（天井の丸形・角形ディフューザー）</b>：<b>ネック風速</b>（接続口の風速）で大きさを選ぶ。速すぎると吹出し音や、冷風が人に当たる「ドラフト」の原因に。</p>
+    <p><b>ライン（BL・CL など）</b>：細長いスロット形。有効面積 ＝ スロット数 × スロット幅 × 長さ × 開口率 で、必要な長さ L を決める。窓際や意匠重視の場所に。</p>
+    <p><b>グリル（HS：横羽根、VHS：縦横羽根）</b>：<b>有効開口率</b>（外形のうち空気が通れる割合）を使い、有効面積での風速で選ぶ。</p>
+    <p><b>ガラリ（OA：外気取入れ、EA：排気）</b>：雨の吹き込みを防ぐため風速を低めにする。羽根が多く開口率が小さい（0.3〜0.5程度）ので、外形は大きくなりがち。</p>
+    <p><b>排煙口</b>：建築基準法施行令 第126条の3 で、排煙機の能力は「1分間に120m³以上、かつ防煙区画の床面積1m²につき1m³以上」とされています。このアプリの床面積入力はこの1m³/min を使っています。排煙口の吸込風速は一般に10m/s以下で計画します。最終的には所轄の基準を確認してください。</p>
+  </div></details>
+
+  <details><summary>8. 目安表<span class="tag">社内基準と照合前</span></summary><div class="body">
+    <p><b>ダクト内の風速（低速ダクト）</b></p>
+    <div class="tbl-wrap"><table><tr><th>部屋の種類</th><th>主ダクト</th><th>枝ダクト</th></tr>
+    <tr><td>静かな部屋（会議室・客室・病室など）</td><td>4〜6 m/s</td><td>3〜4 m/s</td></tr>
+    <tr><td>一般事務所</td><td>6〜9 m/s</td><td>4〜6 m/s</td></tr>
+    <tr><td>工場・機械室など</td><td>9〜12 m/s</td><td>6〜8 m/s</td></tr></table></div>
+    <p><b>定圧法の摩擦損失</b>：0.8〜1.5 Pa/m（一般的には 1 Pa/m 前後）</p>
+    <p><b>静圧再取得係数</b>：0.5〜0.9（一般的には 0.75 前後）</p>
+    <p><b>制気口の風速</b></p>
+    <div class="tbl-wrap"><table><tr><th>器具</th><th>目安</th></tr>
+    <tr><td>アネモ ネック風速（静かな部屋）</td><td>2.5〜3.5 m/s</td></tr>
+    <tr><td>アネモ ネック風速（一般事務所）</td><td>3〜4 m/s</td></tr>
+    <tr><td>アネモ ネック風速（店舗・工場など）</td><td>4〜5 m/s</td></tr>
+    <tr><td>グリル 有効風速（吹出）</td><td>2〜3.5 m/s</td></tr>
+    <tr><td>グリル 有効風速（吸込）</td><td>2〜3 m/s</td></tr>
+    <tr><td>OAガラリ 有効風速</td><td>2〜3 m/s</td></tr>
+    <tr><td>EAガラリ 有効風速</td><td>3〜4 m/s</td></tr>
+    <tr><td>排煙口 吸込風速</td><td>10 m/s 以下</td></tr></table></div>
+    <p class="note">一般的な代表値です。社内基準・メーカーのカタログ値と照合して直していく予定です。</p>
+  </div></details>
+
+  <details><summary>9. このアプリを使うときの注意</summary><div class="body">
+    <ul><li>結果は目安です。設計図・特記仕様書・元請の指示を優先してください。</li>
+    <li>結果の下の「計算の中身を見る」で、今の数字を入れた途中式を確認できます。手計算と比べてみると理解が深まります。</li>
+    <li>制気口の開口率・風速は、使うメーカーのカタログ値に直すと正確になります。</li>
+    <li>入力や記録は保存されません。再読み込みすると初期値に戻ります。</li></ul>
+  </div></details>
+</section>
+
 <section id="tab-setting" class="hidden">
   <div class="card">
     <h2>ダクトの計算条件</h2>
@@ -181,7 +288,7 @@ footer{text-align:center;font-size:11px;color:var(--color-sub);margin-top:16px}
   </div>
 </section>
 
-<footer>ダクト・制気口選定｜栄都工業　Rev08-20261110　©2026 Eito Kogyo</footer>
+<footer>ダクト・制気口選定｜栄都工業　Rev09-20261111　©2026 Eito Kogyo</footer>
 </div>
 
 <script>
@@ -235,6 +342,30 @@ function rectCandidates(ok,p){
 function rectForFixedH(ok,H,p){const st=p.step,mn=Math.ceil(p.min/st)*st;for(let w=mn;w<=8000;w+=st){if(ok(w,H))return{W:w,H};}return null;}
 function roundStdList(){return $('sRound').value.split(/[,、\s]+/).map(Number).filter(x=>x>0).sort((a,b)=>a-b);}
 
+/* ---------- 計算の中身（途中式） ---------- */
+let traceOpen=false;
+document.addEventListener('toggle',e=>{if(e.target.classList&&e.target.classList.contains('calc'))traceOpen=e.target.open;},true);
+const f4=x=>{if(!isFinite(x))return '−';const a=Math.abs(x);return a>=100?x.toFixed(1):a>=1?x.toFixed(3):x.toPrecision(3);};
+function wrapTrace(steps){return `<details class="calc"${traceOpen?' open':''}><summary>計算の中身を見る</summary><ol>${steps.filter(Boolean).map(t=>'<li>'+t+'</li>').join('')}</ol><div class="hint">考え方は「解説」タブで詳しく説明しています。</div></details>`;}
+function stepQ(q,Qh){return `<b>風量を秒あたりに直す</b><span class="f">Q ＝ ${fmt0(Qh)} m³/h ÷ 3600 ＝ ${f4(q)} m³/s</span><span class="why">風速（m/s）と単位をそろえるため、1時間あたりを1秒あたりに直します。</span>`;}
+function lam(r,D,p){return r.R*D/(p.rho*r.v*r.v/2);}
+function stepRound(q,dmm,p,title){const D=dmm/1000,A=Math.PI*D*D/4,r=roundFlow(q,D,p),l=lam(r,D,p);
+  return `<b>${title||'φ'+dmm+' の確認'}（丸ダクト φ${dmm}）</b><span class="f">断面積 A ＝ π × ${D}² ÷ 4 ＝ ${f4(A)} m²</span><span class="f">風速 v ＝ Q ÷ A ＝ ${f4(q)} ÷ ${f4(A)} ＝ ${f1(r.v,2)} m/s</span><span class="f">レイノルズ数 Re ＝ v × D ÷ ν ＝ ${f1(r.v,2)} × ${D} ÷ ${f4(p.nu)} ＝ ${fmt0(r.Re)}</span><span class="f">管摩擦係数 λ ＝ ${l.toFixed(4)}（Re と 粗さ ε/D ＝ ${f4(p.eps/D)} からコールブルック式で計算）</span><span class="f">摩擦損失 R ＝ λ ÷ D × ρv²/2 ＝ ${l.toFixed(4)} ÷ ${D} × ${f1(p.rho*r.v*r.v/2,2)} ＝ ${f1(r.R,2)} Pa/m</span><span class="why">ρv²/2 は「動圧」。風速の2乗に比例するので、風速が2倍になると損失はおよそ4倍になります。</span>`;}
+function stepRect(q,W,H,p,needD,title){const a=W/1000,b=H/1000,d=De(a,b),r=rectFlow(q,a,b,p);
+  return `<b>${title||W+'×'+H+' の確認'}（角ダクト ${W}×${H}）</b><span class="f">相当直径 De ＝ 1.30 × (a×b)^0.625 ÷ (a+b)^0.25 ＝ 1.30 × (${a}×${b})^0.625 ÷ (${a}+${b})^0.25 ＝ ${fmt0(d*1000)} mm${needD?' ≧ 必要径 '+fmt0(needD*1000)+' mm':''}</span><span class="f">風速 v ＝ Q ÷ (W×H) ＝ ${f4(q)} ÷ ${f4(a*b)} ＝ ${f1(r.v,2)} m/s</span><span class="f">摩擦損失 R ＝ 直径 De の丸ダクトと同じ ＝ ${f1(r.R,2)} Pa/m</span><span class="why">相当直径は「同じ風量を流したとき、摩擦損失が同じになる丸ダクトの直径」。角ダクトは丸ダクトに置き換えて計算します。</span>`;}
+function stepJudge(v,p){return v>p.vmax?`<b>風速の確認</b><span class="f">${f1(v,2)} m/s ＞ 警告値 ${p.vmax} m/s → 騒音が出やすいので、太くするか系統を分けることを検討</span>`:`<b>風速の確認</b><span class="f">${f1(v,2)} m/s ≦ 警告値 ${p.vmax} m/s → OK</span>`;}
+function ductTrace(c){const {q,Qh,p,Dreq,secL,selD,rect}=c,tr=[stepQ(q,Qh)];
+  const Dm=fmt0(Dreq*1000),rq=roundFlow(q,Dreq,p);
+  if(method==='cp'){tr.push(`<b>必要な太さを探す（定圧法）</b><span class="f">摩擦損失 R が ${num('dR')} Pa/m になる直径を、太さを変えながら繰り返し計算 → D ＝ ${Dm} mm</span><span class="why">太いほど風速が下がり、摩擦損失は小さくなります。ちょうど目標の値になる太さが「必要な円形ダクト径」です。</span>`);}
+  else if(method==='sr'){const v1=num('dV1'),k=num('dK');tr.push(`<b>必要な太さを探す（静圧再取得法）</b><span class="f">回復する静圧 ＝ k × ρ/2 × (v1² − v2²) ＝ ${k} × ${p.rho}/2 × (${v1}² − ${f1(rq.v,2)}²) ＝ ${f1(k*p.rho/2*(v1*v1-rq.v*rq.v),1)} Pa</span><span class="f">この区間の摩擦損失 ＝ R × L ＝ ${f1(rq.R,2)} × ${secL} ＝ ${f1(rq.R*secL,1)} Pa</span><span class="f">2つが等しくなる直径 → D ＝ ${Dm} mm（そのときの風速 v2 ＝ ${f1(rq.v,2)} m/s）</span><span class="why">風速が落ちると動圧の一部が静圧に戻ります。その戻り分で区間の損失を打ち消すので、各分岐の静圧がそろいやすくなります。</span>`);}
+  else if(method==='tp'){const Pt=num('dPt'),z=num('dZeta')||0;tr.push(`<b>必要な太さを探す（全圧法）</b><span class="f">直管の摩擦 R × L ＋ 局部損失 ζ × ρv²/2 ＝ ${f1(rq.R,2)} × ${secL} ＋ ${z} × ${f1(p.rho*rq.v*rq.v/2,2)} ＝ ${f1(rq.R*secL+z*p.rho*rq.v*rq.v/2,1)} Pa</span><span class="f">これが許容全圧損失 ${Pt} Pa になる直径 → D ＝ ${Dm} mm</span><span class="why">区間に使える圧力（予算）を先に決めて、その中に収まる太さを選ぶ方法です。</span>`);}
+  else if(method==='vel'){const v=num('dV'),A=q/v;tr.push(`<b>必要な断面積（速度法）</b><span class="f">A ＝ Q ÷ v ＝ ${f4(q)} ÷ ${v} ＝ ${f4(A)} m²</span><span class="f">D ＝ √(4A ÷ π) ＝ √(4 × ${f4(A)} ÷ π) ＝ ${Dm} mm</span><span class="why">風量 ＝ 断面積 × 風速（Q ＝ A × v）の関係を、断面積について解いています。</span>`);}
+  if(selD){tr.push(stepRound(q,selD,p,'規格サイズに合わせる')+`<span class="why">必要径 ${Dm} mm 以上で一番細い規格サイズ φ${selD} を選んでいます。</span>`);}
+  if(rect){if(method==='vel'){const A=q/num('dV');tr.push(`<b>角ダクト ${rect.W}×${rect.H}（速度法は断面積で選ぶ）</b><span class="f">${rect.W/1000} × ${rect.H/1000} ＝ ${f4(rect.W*rect.H/1e6)} m² ≧ 必要 ${f4(A)} m²</span>`);}
+    else tr.push(stepRect(q,rect.W,rect.H,p,Dreq));}
+  if(selD)tr.push(stepJudge(roundFlow(q,selD/1000,p).v,p));
+  return wrapTrace(tr);}
+
 /* ---------- ダクト計算 ---------- */
 let method=store.method||'cp';
 const hints={
@@ -244,6 +375,7 @@ const hints={
   vel:'風速を一定にして断面積からサイズを決めます。角ダクトも断面積で選定します。',
   chk:'任意のサイズで、風速と摩擦損失を確認します。'
 };
+Object.keys(hints).forEach(k=>hints[k]+=' 詳しくは「解説」タブへ。');
 function setMethod(m){
   method=m;store.method=m;save();
   document.querySelectorAll('#methodTabs button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));
@@ -312,6 +444,7 @@ function calcDuct(){
   }
 
   // 角ダクト
+  let bestRect=null;
   html+='<h2 style="margin-top:16px">角ダクト（W×H）</h2>';
   const Hfix=num('dHfix');
   const rowRect=(c,best)=>{const r=rectFlow(q,c.W/1000,c.H/1000,p),asp=Math.max(c.W,c.H)/Math.min(c.W,c.H);
@@ -319,6 +452,7 @@ function calcDuct(){
   const head='<div class="tbl-wrap"><table><tr><th>W×H mm</th><th>縦横比</th><th>風速 m/s</th><th>摩擦 Pa/m</th>'+(lossCol?'<th>区間損失 Pa</th>':'')+'<th></th></tr>';
   if(Hfix>0){
     const c=rectForFixedH(okRect,Hfix,p);
+    bestRect=c;
     html+=c?head+rowRect(c,true)+'</table></div>':'<div class="note">この高さでは選定できません。</div>';
   }else{
     const cs=rectCandidates(okRect,p);
@@ -326,10 +460,12 @@ function calcDuct(){
     else{
       // おすすめ＝周長（＝鉄板量）が最小、同じなら縦横比が小さい方
       let bi=0;cs.forEach((c,i)=>{const a=cs[bi];if(c.W+c.H<a.W+a.H||(c.W+c.H===a.W+a.H&&c.W/c.H<a.W/a.H))bi=i;});
+      bestRect=cs[bi];
       html+=head+cs.map((c,i)=>rowRect(c,i===bi)).join('')+'</table></div>';
       html+='<div class="hint">「おすすめ」は周長が最小（鉄板が一番少ない）のサイズです。天井内の高さに制限があるときは「角ダクト高さを固定」に入れてください。</div>';
     }
   }
+  html+=ductTrace({q,Qh,p,Dreq,secL,selD:idx>=0?std[idx]:null,rect:bestRect});
   out.innerHTML=html;
 }
 function calcCheck(q,p,out){
@@ -341,6 +477,10 @@ function calcCheck(q,p,out){
   let html='<h2>'+label+' の確認結果</h2><div class="res-main">'+kv('風速',f1(r.v,2),'m/s',true)+kv('摩擦損失',f1(r.R,2),'Pa/m',true)+(r.De?kv('相当直径 De',fmt0(r.De*1000),'mm'):'')+(asp?kv('縦横比',f1(asp,2),':1'):'')+'</div>';
   if(r.v>p.vmax)html+=`<div class="warn">風速が警告値（${p.vmax} m/s）を超えています。</div>`;
   if(asp&&asp>p.asp+1e-9)html+=`<div class="warn">縦横比が上限（${p.asp}:1）を超えています。</div>`;
+  const tr=[stepQ(q,q*3600)];
+  if($('cShape').value==='round')tr.push(stepRound(q,num('cD'),p,'このサイズの確認'));else tr.push(stepRect(q,num('cW'),num('cH'),p,null,'このサイズの確認'));
+  tr.push(stepJudge(r.v,p));
+  html+=wrapTrace(tr);
   out.innerHTML=html;
 }
 
@@ -390,12 +530,16 @@ function calcOutlet(){
     html+='<div class="tbl-wrap" style="margin-top:12px"><table><tr><th>ネック</th><th>面積 cm²</th><th>ネック風速 m/s</th><th></th></tr>';
     sizes.forEach((s,i)=>{const vv=q/area(s);html+=`<tr class="${i===sel?'best':(vv>v?'ng':'')}"><td>${d.type==='neckRound'?'φ':'□'}${s}</td><td>${f1(area(s)*1e4,0)}</td><td>${f1(vv,2)}</td><td>${i===sel?'<span class="badge b-green">選定</span>':''}</td></tr>`;});
     html+='</table></div>';
+    const tr=[stepQ(q,Qh),`<b>必要なネック面積</b>（風速の上限を超えない最小の面積）<span class="f">A ＝ Q ÷ v上限 ＝ ${f4(q)} ÷ ${v} ＝ ${f4(q/v)} m²（${f1(q/v*1e4,0)} cm²）</span>`];
+    if(sel>=0){const s=sizes[sel],a=area(s);tr.push(`<b>${d.type==='neckRound'?'φ':'□'}${s} の確認</b>（一覧の中で、必要な面積を満たす一番小さいサイズ）<span class="f">ネック面積 ＝ ${d.type==='neckRound'?'π × '+(s/1000)+'² ÷ 4':(s/1000)+' × '+(s/1000)} ＝ ${f4(a)} m²</span><span class="f">ネック風速 ＝ ${f4(q)} ÷ ${f4(a)} ＝ ${f1(q/a,2)} m/s ≦ ${v} m/s</span><span class="why">ネック風速が速いと、吹出し音が大きくなったり、冷風が直接当たる（ドラフト）原因になります。</span>`);}
+    html+=wrapTrace(tr);
   }else if(d.type==='line'){
     const k=Math.min(1,parseFloat(d.k)),n=parseFloat(d.n),w=parseFloat(d.w),rd=parseFloat(d.round)||1;
     if(!(k>0&&n>0&&w>0)){out.innerHTML='<div class="note">開口率・スロット数・スロット幅を入れてください。</div>';return;}
     const Lreq=q/(v*n*(w/1000)*k)*1000,L=Math.ceil(Lreq/rd-1e-9)*rd,vv=q/(n*(w/1000)*(L/1000)*k);
     html+='<div class="res-main">'+kv('必要なL寸法',fmt0(Lreq),'mm')+kv('選定 L',fmt0(L),'mm',true)+kv('吹出風速',f1(vv,2),'m/s')+kv('1mあたり風量',fmt0(Qh/(L/1000)),'m³/h·m')+'</div>';
     html+=`<div class="hint">${n}スロット × 幅${w}mm × L${fmt0(L)}mm × 開口率${k}</div>`;
+    html+=wrapTrace([stepQ(q,Qh),`<b>必要な長さ L</b>（吹出口の有効面積＝スロット数×スロット幅×長さ×開口率）<span class="f">L ＝ Q ÷（v × スロット数 × スロット幅 × 開口率）</span><span class="f">＝ ${f4(q)} ÷（${v} × ${n} × ${w/1000} × ${k}）＝ ${f1(Lreq/1000,3)} m</span>`,`<b>${rd}mm単位で切り上げ</b><span class="f">L ＝ ${fmt0(L)} mm</span>`,`<b>実際の吹出風速</b><span class="f">v ＝ ${f4(q)} ÷（${n} × ${w/1000} × ${L/1000} × ${k}）＝ ${f1(vv,2)} m/s</span><span class="why">長さを切り上げたぶん、風速は上限より少し下がります。</span>`]);
   }else{
     const k=Math.min(1,parseFloat(d.k));if(!(k>0)){out.innerHTML='<div class="note">開口率を入れてください。</div>';return;}
     const A=q/(v*k); // 外形面積 m2
@@ -412,6 +556,13 @@ function calcOutlet(){
       html+='<div class="tbl-wrap" style="margin-top:12px"><table><tr><th>W×H mm</th><th>外形 cm²</th><th>有効 cm²</th><th>'+(d.id==='smoke'?'吸込':'有効')+'風速 m/s</th><th></th></tr>';
       cs.forEach((c,i)=>{const af=c.W*c.H/1e6;html+=`<tr class="${i===bi?'best':''}"><td>${c.W}×${c.H}</td><td>${f1(af*1e4,0)}</td><td>${f1(af*k*1e4,0)}</td><td>${f1(q/(af*k),2)}</td><td>${i===bi?'<span class="badge b-green">おすすめ</span>':''}</td></tr>`;});
       html+='</table></div><div class="hint">「おすすめ」は面積が一番小さいサイズです。</div>';
+      const c=cs[bi],af=c.W*c.H/1e6,tr=[];
+      const sa=num('smArea');if(d.id==='smoke'&&sa>0)tr.push(`<b>排煙量</b>（防煙区画の床面積 1m² あたり 1m³/min）<span class="f">${fmt0(sa)} m² × 1 m³/min ＝ ${fmt0(sa)} m³/min ＝ ${fmt0(sa*60)} m³/h</span>`);
+      tr.push(stepQ(q,Qh));
+      tr.push(`<b>必要な有効開口面積</b>（羽根やガラリの板を除いた、空気が実際に通る面積）<span class="f">有効面積 ＝ Q ÷ v上限 ＝ ${f4(q)} ÷ ${v} ＝ ${f4(q/v)} m²</span>`);
+      tr.push(`<b>必要な外形面積</b><span class="f">外形面積 ＝ 有効面積 ÷ 開口率 ＝ ${f4(q/v)} ÷ ${k} ＝ ${f4(A)} m²</span><span class="why">開口率は「外形のうち空気が通れる割合」。羽根やガラリの板があるぶん、外形は有効面積より大きくなります。</span>`);
+      tr.push(`<b>${c.W}×${c.H} の確認</b><span class="f">外形 ${c.W/1000} × ${c.H/1000} ＝ ${f4(af)} m² → 有効 ${f4(af)} × ${k} ＝ ${f4(af*k)} m²</span><span class="f">${d.id==='smoke'?'吸込':'有効'}風速 ＝ ${f4(q)} ÷ ${f4(af*k)} ＝ ${f1(q/(af*k),2)} m/s ≦ ${v} m/s</span>`);
+      html+=wrapTrace(tr);
     }
   }
   out.innerHTML=html;
@@ -420,7 +571,7 @@ function calcOutlet(){
 /* ---------- イベント ---------- */
 document.querySelectorAll('#mainTabs button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('#mainTabs button').forEach(x=>x.classList.toggle('on',x===b));
-  ['duct','outlet','rec','setting'].forEach(t=>$('tab-'+t).classList.toggle('hidden',t!==b.dataset.t));
+  ['duct','outlet','rec','ex','setting'].forEach(t=>$('tab-'+t).classList.toggle('hidden',t!==b.dataset.t));
   store.tab=b.dataset.t;save();
   if(b.dataset.t==='duct')calcDuct();if(b.dataset.t==='outlet')calcOutlet();if(b.dataset.t==='rec')renderRec();
 });
